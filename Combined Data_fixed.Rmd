@@ -1,0 +1,233 @@
+---
+title: "Combined Data"
+output: html_document
+date: "2024-07-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+```
+
+```{r}
+# install.packages("devtools")
+#devtools::install_github("bio-oracle/biooracler")
+library(biooracler)
+library(tidyverse)
+library(stars)
+library(sf)
+library(abind)
+library(patchwork)
+```
+
+Establishing parameters (coordinates of the Gulf of Mexico)
+```{r}
+latitude = c(31.14, 14.37)
+longitude = c(-80.63, -98.86)
+
+constraints = list(time, latitude, longitude)
+names(constraints) = c("time", "latitude", "longitude")
+
+```
+
+2020 
+```{r}
+#establishing the time of 2020
+time = c('2020-01-01T00:00:00Z', '2020-01-01T00:00:00Z')
+```
+
+2020 - ssp2 (45)
+```{r}
+#identifying data set for surface temperature
+dataset_id = "thetao_ssp245_2020_2100_depthsurf"
+
+variables = "thetao_mean"
+
+temp_ssp2_2020 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+
+
+
+#identifying data set for bathymetry 
+dataset_id = "mlotst_ssp245_2020_2100_depthsurf"
+
+variables = "mlotst_mean"
+
+#downloading layer to the according varibale 
+mld_ssp2_2020 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+
+
+
+#identifying data set for chlorophyll-a consentration ssp2
+dataset_id = "chl_ssp245_2020_2100_depthsurf"
+
+variables = "chl_mean"
+
+# downloading layer 
+chl_ssp2_2020 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+```
+
+2020 - ssp4 (60)
+```{r}
+#identifying data set for surface temperature ssp4
+dataset_id = "thetao_ssp460_2020_2100_depthsurf"
+
+variables = "thetao_mean"
+
+temp_ssp4_2020 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+
+
+
+#identifying data set for bathymetry ssp4
+dataset_id = "mlotst_ssp460_2020_2100_depthsurf"
+
+variables = "mlotst_mean"
+
+#downloading layer to the according varibale 
+mld_ssp4_2020 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+
+
+
+#identifying data set for chlorophyll-a consentration ssp4
+dataset_id = "chl_ssp460_2020_2100_depthsurf"
+
+variables = "chl_mean"
+
+# downloading layer 
+chl_ssp4_2020 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+```
+
+------------
+2050 
+```{r}
+#reestablishing the time as 2050
+time = c('2050-01-01T00:00:00Z', '2050-01-01T00:00:00Z')
+```
+
+2050 - ssp2 (45)
+```{r}
+#identifying data set for surface temperature
+dataset_id = "thetao_ssp245_2020_2100_depthsurf"
+
+variables = "thetao_mean"
+
+temp_ssp2_2050 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+
+
+
+#identifying data set for bathymetry 
+dataset_id = "mlotst_ssp245_2020_2100_depthsurf"
+
+variables = "mlotst_mean"
+
+#downloading layer to the according varibale 
+mld_ssp2_2050 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+
+
+
+#identifying data set for chlorophyll-a consentration ssp2
+dataset_id = "chl_ssp245_2020_2100_depthsurf"
+
+variables = "chl_mean"
+
+# downloading layer 
+chl_ssp2_2050 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+```
+
+2050 - ssp4 (60)
+```{r}
+#identifying data set for surface temperature ssp4
+dataset_id = "thetao_ssp460_2020_2100_depthsurf"
+
+variables = "thetao_mean"
+
+temp_ssp4_2050 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+
+
+
+#identifying data set for bathymetry ssp4
+dataset_id = "mlotst_ssp460_2020_2100_depthsurf"
+
+variables = "mlotst_mean"
+
+#downloading layer to the according varibale 
+mld_ssp4_2050 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+
+
+
+#identifying data set for chlorophyll-a consentration ssp4
+dataset_id = "chl_ssp460_2020_2100_depthsurf"
+
+variables = "chl_mean"
+
+# downloading layer 
+chl_ssp4_2050 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+```
+
+
+------------
+2090 
+```{r}
+#reestablishing the time as 2090
+time = c('2090-01-01T00:00:00Z', '2090-01-01T00:00:00Z')
+```
+
+2090 - ssp2 (45)
+```{r}
+#identifying data set for surface temperature
+dataset_id = "thetao_ssp245_2020_2100_depthsurf"
+
+variables = "thetao_mean"
+
+temp_ssp2_2090 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+
+
+
+#identifying data set for bathymetry 
+dataset_id = "mlotst_ssp245_2020_2100_depthsurf"
+
+variables = "mlotst_mean"
+
+#downloading layer to the according varibale 
+mld_ssp2_2090 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+
+
+
+#identifying data set for chlorophyll-a consentration ssp2
+dataset_id = "chl_ssp245_2020_2100_depthsurf"
+
+variables = "chl_mean"
+
+# downloading layer 
+chl_ssp2_2090 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+```
+
+2090 - ssp4 (60)
+```{r}
+#identifying data set for surface temperature ssp4
+dataset_id = "thetao_ssp460_2020_2100_depthsurf"
+
+variables = "thetao_mean"
+
+temp_ssp4_2090 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+
+
+
+#identifying data set for bathymetry ssp4
+dataset_id = "mlotst_ssp460_2020_2100_depthsurf"
+
+variables = "mlotst_mean"
+
+#downloading layer to the according varibale 
+mld_ssp4_2090 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+
+
+
+#identifying data set for chlorophyll-a consentration ssp4
+dataset_id = "chl_ssp460_2020_2100_depthsurf"
+
+variables = "chl_mean"
+
+# downloading layer 
+chl_ssp4_2090 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
+```
