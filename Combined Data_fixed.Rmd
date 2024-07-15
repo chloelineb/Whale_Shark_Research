@@ -235,7 +235,7 @@ chl_ssp4_2090 <- download_layers(dataset_id = dataset_id, variables = variables,
 Extracting data from each layer
 ```{r}
 # reading out the occurences 
-occurences = read_csv(here::here("data", "Raw", "GBIF_Occurance_data2_local.csv"))%>% 
+occurences = read_csv(here::here("data", "Raw", "GBIF_Occurance_data2.csv"))%>% 
   select(occurrenceStatus, decimalLatitude, decimalLongitude) %>% 
   filter(!is.na(as.numeric(decimalLatitude))) %>% 
   filter(!is.na(as.numeric(decimalLongitude)))  %>% 
@@ -258,7 +258,6 @@ random_points = terra::spatSample(no_points, 10000, "random", na.rm=T, as.points
 
 class(random_points)
 
-
 random_points = random_points %>% 
   filter(thetao_mean > 0)%>% 
   mutate(occurrenceStatus = "ABSENT")%>% 
@@ -271,7 +270,7 @@ temp_ssp2_2020_extract = terra::extract(temp_ssp2_2020, occurences) %>%
 ```
 ```{r}
 model_data = rbind(random_points, temp_ssp2_2020_extract)%>% 
-  st_as_sf()
+  st_as_sf() 
 
 
 ```
