@@ -7,7 +7,7 @@ library(biooracler)
 
 ## load ex occurences
 ## GBIF.org (11 July 2024) GBIF Occurrence Download  https://doi.org/10.15468/dl.jd5her
-occurences = read_csv(here::here("data", "Raw", "GBIF_Occurance_data.csv")) %>% 
+occurences = read_csv(here::here("data", "Raw", "GBIF_Occurance_data2.csv"))%>% 
   select(occurrenceStatus, decimalLatitude, decimalLongitude) %>% 
   filter(!is.na(as.numeric(decimalLatitude))) %>% 
   filter(!is.na(as.numeric(decimalLongitude)))  %>% 
@@ -40,7 +40,12 @@ no_points = mask(ph_crop, buffer_occurence, inverse=TRUE)
 
 # takes a while, but you'll want to change the number to get close to the number of occurences you have
 random_points = terra::spatSample(no_points, 10000, "random", na.rm=T, as.points=TRUE) %>% 
-  st_as_sf() %>% 
+  st_as_sf() #should be an sf dataframe
+
+class(random_points)
+
+
+random_points = random_points %>% 
   filter(ph_mean > 0)%>% 
   mutate(occurrenceStatus = "ABSENT")%>% 
   select(ph_mean, occurrenceStatus)
