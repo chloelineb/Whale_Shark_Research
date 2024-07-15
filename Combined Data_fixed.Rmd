@@ -231,3 +231,25 @@ variables = "chl_mean"
 # downloading layer 
 chl_ssp4_2090 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
 ```
+
+
+Extracting data from each layer
+```{r}
+# reading out the occurences 
+occurences = read_csv(here::here("data", "Raw", "GBIF_Occurance_data2.csv"))%>% 
+  select(occurrenceStatus, decimalLatitude, decimalLongitude) %>% 
+  filter(!is.na(as.numeric(decimalLatitude))) %>% 
+  filter(!is.na(as.numeric(decimalLongitude)))  %>% 
+  filter(occurrenceStatus == "PRESENT") %>% 
+  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = "EPSG:4326")
+
+```
+
+```{r}
+#extracting 
+
+temp_ssp2_2020_extract <- terra::extract(temp_ssp2_2020, occurences) %>% 
+  cbind(occurences) %>% 
+  st_as_sf()
+```
+
