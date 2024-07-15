@@ -251,5 +251,8 @@ occurences = read_csv(here::here("data", "Raw", "GBIF_Occurance_data2.csv"))%>%
 temp_ssp2_2020_extract <- terra::extract(temp_ssp2_2020, occurences) %>% 
   cbind(occurences) %>% 
   st_as_sf()
+
+
+
 ```
 
