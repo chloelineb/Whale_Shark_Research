@@ -232,11 +232,10 @@ variables = "chl_mean"
 chl_ssp4_2090 <- download_layers(dataset_id = dataset_id, variables = variables, constraints = constraints)
 ```
 
-
 Extracting data from each layer
 ```{r}
 # reading out the occurences 
-occurences = read_csv(here::here("data", "Raw", "GBIF_Occurance_data2.csv"))%>% 
+occurences = read_csv(here::here("data", "Raw", "GBIF_Occurance_data2_local.csv"))%>% 
   select(occurrenceStatus, decimalLatitude, decimalLongitude) %>% 
   filter(!is.na(as.numeric(decimalLatitude))) %>% 
   filter(!is.na(as.numeric(decimalLongitude)))  %>% 
@@ -248,11 +247,31 @@ occurences = read_csv(here::here("data", "Raw", "GBIF_Occurance_data2.csv"))%>%
 ```{r}
 #extracting 
 
-temp_ssp2_2020_extract <- terra::extract(temp_ssp2_2020, occurences) %>% 
+buffer_occurence = st_buffer(occurences, 5000)
+
+temp_crop = crop(temp_ssp2_2020, buffer_occurence)
+no_points = mask(temp_ssp2_2020, buffer_occurence, inverse=TRUE)
+
+# takes a while, but you'll want to change the number to get close to the number of occurences you have
+random_points = terra::spatSample(no_points, 10000, "random", na.rm=T, as.points=TRUE) %>% 
+  st_as_sf() #should be an sf dataframe
+
+class(random_points)
+
+
+random_points = random_points %>% 
+  filter(thetao_mean > 0)%>% 
+  mutate(occurrenceStatus = "ABSENT")%>% 
+  select(thetao_mean, occurrenceStatus)
+
+temp_ssp2_2020_extract = terra::extract(temp_ssp2_2020, occurences) %>% 
   cbind(occurences) %>% 
+  st_as_sf() %>% 
+  select(thetao_mean, occurrenceStatus)
+```
+```{r}
+model_data = rbind(random_points, temp_ssp2_2020_extract)%>% 
   st_as_sf()
 
 
-
 ```
-
