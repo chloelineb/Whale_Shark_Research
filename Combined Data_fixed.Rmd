@@ -17,6 +17,7 @@ library(biooracler)
 library(tidyverse)
 library(stars)
 library(sf)
+library(terra)
 library(abind)
 library(patchwork)
 ```
@@ -235,7 +236,7 @@ chl_ssp4_2090 <- download_layers(dataset_id = dataset_id, variables = variables,
 Extracting data from each layer
 ```{r}
 # reading out the occurences 
-occurences = read_csv(here::here("data", "Raw", "GBIF_Occurance_data2_local.csv"))%>% 
+occurences = read_csv(here::here("data", "Raw", "GBIF_Occurance_data2.csv"))%>% 
   select(occurrenceStatus, decimalLatitude, decimalLongitude) %>% 
   filter(!is.na(as.numeric(decimalLatitude))) %>% 
   filter(!is.na(as.numeric(decimalLongitude)))  %>% 
@@ -248,9 +249,20 @@ occurences = read_csv(here::here("data", "Raw", "GBIF_Occurance_data2_local.csv"
 #extracting 
 
 buffer_occurence = st_buffer(occurences, 5000)
+combined_data = data.frame()
 
-temp_crop = crop(temp_ssp2_2020, buffer_occurence)
-no_points = mask(temp_ssp2_2020, buffer_occurence, inverse=TRUE)
+n = 18
+#vector of all the rasters we are testing
+rasters = c(temp_ssp2_2020_extract, temp_ssp2_2050, temp_ssp2_2090, temp_ssp4_2020, temp_ssp4_2050, temp_ssp4_2090, mld_ssp2_2020, mld_ssp2_2050, mld_ssp2_2090, mld_ssp4_2020, mld_ssp4_2050, mld_ssp4_2090, chl_ssp2_2020, chl_ssp2_2050, chl_ssp2_2090, chl_ssp4_2020, chl_ssp4_2050, chl_ssp4_2090)
+#creates the necessary means for the rasters
+Crops = rep(NaN, n)
+extracts = rep(NaN, n)
+
+#need to figure out how to combine the rasters so this for loop works
+for (i in 1:18) {
+#problem with cropping a portion of a vector
+Crops[i] = terra::crop(rasters[i], buffer_occurence)
+no_points = terra::mask(rasters[i], buffer_occurence, inverse=TRUE)
 
 # takes a while, but you'll want to change the number to get close to the number of occurences you have
 random_points = terra::spatSample(no_points, 10000, "random", na.rm=T, as.points=TRUE) %>% 
@@ -264,14 +276,24 @@ random_points = random_points %>%
   mutate(occurrenceStatus = "ABSENT")%>% 
   select(thetao_mean, occurrenceStatus)
 
-temp_ssp2_2020_extract = terra::extract(temp_ssp2_2020, occurences) %>% 
+extracts[i] = terra::extract(rasters[i], occurences) %>% 
   cbind(occurences) %>% 
   st_as_sf() %>% 
-  select(thetao_mean, occurrenceStatus)
+  select(means[i], occurrenceStatus)
+
+combined_data %>% 
+  mutate(extracts[i])
+}
 ```
+
 ```{r}
 model_data = rbind(random_points, temp_ssp2_2020_extract)%>% 
   st_as_sf()
 
-
+ggplot(model_data) +
+  geom_sf(aes(color = occurrenceStatus)) +
+  theme_bw()
 ```
+
+
+
