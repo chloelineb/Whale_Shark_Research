@@ -267,7 +267,7 @@ random_points = random_points %>%
 
 random_points$thetao_mean <- NULL
 
-OneBigDataSet <- rbind(occurences, random_points)
+All_occurance <- rbind(occurences, random_points)
 ```
 
 ```{r}
@@ -277,7 +277,7 @@ testSet = c(
                    chl_ssp2_2020, chl_ssp4_2020,
                    mld_ssp2_2020, mld_ssp4_2020), All_occurance)
    ) %>%
-  cbind(OneBigDataSet) 
+  cbind(All_occurance) 
 
 testSet$ID = NULL
 for (x in 1:5) {
