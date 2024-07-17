@@ -226,3 +226,8 @@ testSet2 <- testSet %>%
 testSet2$geometry <- NULL
 ```
 
+generating into csv
+```{r}
+write.csv(testSet2, "Data_of_everything.csv")
+```
+
