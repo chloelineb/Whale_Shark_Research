@@ -292,14 +292,7 @@ names(testSet) <- c("temp_ssp2_20","temp_ssp4_20","chl_ssp2_20","chl_ssp4_20","m
                     "occurance_status", "geometry")
 ```
 
-```{r}
-model_data = rbind(random_points, temp_ssp2_2020_extract)%>% 
-  st_as_sf() 
-
-
-```
-
-connor'sforloop
+connor's forloop
 
 ```{r}
 #extracting 
