@@ -206,8 +206,6 @@ for (x in 1:17) {
 
 testSet = na.omit(testSet)
 
-colnames(testSet)
-
 names(testSet) <- c("temp_ssp2_20","temp_ssp4_20","chl_ssp2_20","chl_ssp4_20","mld_ssp2_20","mld_ssp4_20",
                          "temp_ssp2_50","temp_ssp4_50","chl_ssp2_50","chl_ssp4_50","mld_ssp2_50", "mld_ssp4_50",
                          "temp_ssp2_90","temp_ssp4_90","chl_ssp2_90","chl_ssp4_90","mld_ssp2_90", "mld_ssp4_90",
@@ -215,9 +213,16 @@ names(testSet) <- c("temp_ssp2_20","temp_ssp4_20","chl_ssp2_20","chl_ssp4_20","m
 
 
 
-
-
-testSet2 = na.omit(testSet)
-
-
 ```
+
+
+separating long and lad of point geometries 
+```{r}
+testSet2 <- testSet %>% 
+  dplyr::mutate(long = sf::st_coordinates(.)[,1],
+                lat = sf::st_coordinates(.)[,2],
+                )
+
+testSet2$geometry <- NULL
+```
+
