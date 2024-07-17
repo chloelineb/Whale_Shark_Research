@@ -21,6 +21,7 @@ library(abind)
 library(patchwork)
 library(sp)
 library(dplyr)
+library(raster)
 
 ```
 
@@ -275,12 +276,18 @@ All_occurance <- rbind(occurences, random_points)
 testSet = c(
   terra::extract(c(temp_ssp2_2020, temp_ssp4_2020, 
                    chl_ssp2_2020, chl_ssp4_2020,
-                   mld_ssp2_2020, mld_ssp4_2020), All_occurance)
+                   mld_ssp2_2020, mld_ssp4_2020,
+                   temp_ssp2_2050, temp_ssp4_2050, 
+                   chl_ssp2_2050, chl_ssp4_2050,
+                   mld_ssp2_2050, mld_ssp4_2050,
+                   temp_ssp2_2090, temp_ssp4_2090, 
+                   chl_ssp2_2090, chl_ssp4_2090,
+                   mld_ssp2_2090, mld_ssp4_2090), All_occurance)
    ) %>%
   cbind(All_occurance) 
 
 testSet$ID = NULL
-for (x in 1:5) {
+for (x in 1:17) {
   testSet$ID.x = NULL
 }
 
@@ -289,6 +296,8 @@ testSet = na.omit(testSet)
 colnames(testSet)
 
 names(testSet) <- c("temp_ssp2_20","temp_ssp4_20","chl_ssp2_20","chl_ssp4_20","mld_ssp2_20", "mld_ssp4_20",
+                    "temp_ssp2_50","temp_ssp4_50","chl_ssp2_50","chl_ssp4_50","mld_ssp2_50", "mld_ssp4_50",
+                    "temp_ssp2_90","temp_ssp4_90","chl_ssp2_90","chl_ssp4_90","mld_ssp2_90", "mld_ssp4_90",
                     "occurance_status", "geometry")
 ```
 
