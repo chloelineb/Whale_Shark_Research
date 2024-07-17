@@ -262,9 +262,21 @@ class(random_points)
 
 random_points = random_points %>% 
   filter(thetao_mean > 0)%>% 
-  mutate(occurrenceStatus = "ABSENT")%>% 
-  select(thetao_mean, occurrenceStatus)
+  mutate(occurrenceStatus = "ABSENT") %>% relocate(geometry, .after = occurrenceStatus)
 
+
+random_points$thetao_mean <- NULL
+
+All_occurance <- rbind(occurences, random_points)
+```
+my for loop attempt 
+
+```{r}
+
+```
+
+
+```{r}
 temp_ssp2_2020_extract = terra::extract(temp_ssp2_2020, occurences) %>% 
   cbind(occurences) %>% 
   st_as_sf() %>% 
@@ -278,17 +290,7 @@ model_data = rbind(random_points, temp_ssp2_2020_extract)%>%
 
 ```
 
-connorconnorforloopforloop
-```{r}
-# reading out the occurences 
-occurences = read_csv(here::here("data", "Raw", "GBIF_Occurance_data2.csv"))%>% 
-  select(occurrenceStatus, decimalLatitude, decimalLongitude) %>% 
-  filter(!is.na(as.numeric(decimalLatitude))) %>% 
-  filter(!is.na(as.numeric(decimalLongitude)))  %>% 
-  filter(occurrenceStatus == "PRESENT") %>% 
-  st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = "EPSG:4326")
-
-```
+connor'sforloop
 
 ```{r}
 #extracting 
@@ -308,18 +310,6 @@ for (i in 1:18) {
 #problem with cropping a portion of a vector
 Crops[i] = terra::crop(rasters[i], buffer_occurence)
 no_points = terra::mask(rasters[i], buffer_occurence, inverse=TRUE)
-
-# takes a while, but you'll want to change the number to get close to the number of occurences you have
-random_points = terra::spatSample(no_points, 10000, "random", na.rm=T, as.points=TRUE) %>% 
-  st_as_sf() #should be an sf dataframe
-
-class(random_points)
-
-
-random_points = random_points %>% 
-  filter(thetao_mean > 0)%>% 
-  mutate(occurrenceStatus = "ABSENT")%>% 
-  select(thetao_mean, occurrenceStatus)
 
 extracts[i] = terra::extract(rasters[i], occurences) %>% 
   cbind(occurences) %>% 
