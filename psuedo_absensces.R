@@ -31,6 +31,7 @@ ph_mean <- download_layers(dataset_id, variables = variables, constraints = cons
 
 ph_mean = project(ph_mean, st_crs(occurences)[["wkt"]])
 
+class(ph_mean)
 # Buffer ------------------------------------------------------------------
 
 buffer_occurence = st_buffer(occurences, 5000)

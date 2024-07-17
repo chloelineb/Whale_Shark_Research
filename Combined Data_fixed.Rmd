@@ -17,6 +17,7 @@ library(biooracler)
 library(tidyverse)
 library(stars)
 library(sf)
+library(terra)
 library(abind)
 library(patchwork)
 library(sp)
@@ -165,9 +166,20 @@ extracting the pseudo absences
 ```{r}
 #extracting 
 buffer_occurence = st_buffer(occurences, 5000)
+combined_data = data.frame()
 
-temp_crop = crop(temp_ssp2_2020, buffer_occurence)
-no_points = mask(temp_ssp2_2020, buffer_occurence, inverse=TRUE)
+n = 18
+#vector of all the rasters we are testing
+rasters = c(temp_ssp2_2020_extract, temp_ssp2_2050, temp_ssp2_2090, temp_ssp4_2020, temp_ssp4_2050, temp_ssp4_2090, mld_ssp2_2020, mld_ssp2_2050, mld_ssp2_2090, mld_ssp4_2020, mld_ssp4_2050, mld_ssp4_2090, chl_ssp2_2020, chl_ssp2_2050, chl_ssp2_2090, chl_ssp4_2020, chl_ssp4_2050, chl_ssp4_2090)
+#creates the necessary means for the rasters
+Crops = rep(NaN, n)
+extracts = rep(NaN, n)
+
+#need to figure out how to combine the rasters so this for loop works
+for (i in 1:18) {
+#problem with cropping a portion of a vector
+Crops[i] = terra::crop(rasters[i], buffer_occurence)
+no_points = terra::mask(rasters[i], buffer_occurence, inverse=TRUE)
 
 # takes a while, but you'll want to change the number to get close to the number of occurences you have
 random_points = terra::spatSample(no_points, 10000, "random", na.rm=T, as.points=TRUE) %>% 
@@ -179,10 +191,21 @@ random_points = random_points %>%
   filter(thetao_mean > 0)%>% 
   mutate(occurrenceStatus = "ABSENT") %>% relocate(geometry, .after = occurrenceStatus)
 
+<<<<<<< HEAD
+extracts[i] = terra::extract(rasters[i], occurences) %>% 
+  cbind(occurences) %>% 
+  st_as_sf() %>% 
+  select(means[i], occurrenceStatus)
+
+combined_data %>% 
+  mutate(extracts[i])
+}
+=======
 
 random_points$thetao_mean <- NULL
 
 All_occurance <- rbind(occurences, random_points)
+>>>>>>> 0b448ebc2c85bc919e1af0549836f6d5af1c14b4
 ```
 
 ```{r}
@@ -212,10 +235,14 @@ names(testSet) <- c("temp_ssp2_20","temp_ssp4_20","chl_ssp2_20","chl_ssp4_20","m
                     "occurance_status", "geometry")
 
 
-
+ggplot(model_data) +
+  geom_sf(aes(color = occurrenceStatus)) +
+  theme_bw()
 ```
 
 
+<<<<<<< HEAD
+=======
 separating long and lad of point geometries 
 ```{r}
 testSet2 <- testSet %>% 
@@ -225,6 +252,7 @@ testSet2 <- testSet %>%
 
 testSet2$geometry <- NULL
 ```
+>>>>>>> 0b448ebc2c85bc919e1af0549836f6d5af1c14b4
 
 generating into csv
 ```{r}
