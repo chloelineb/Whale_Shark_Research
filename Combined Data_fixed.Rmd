@@ -271,28 +271,25 @@ OneBigDataSet <- rbind(occurences, random_points)
 ```
 
 ```{r}
+
 testSet = c(
-  terra::extract(temp_ssp2_2020, All_occurance), 
-  terra::extract(temp_ssp4_2020, All_occurance),
-  terra::extract(chl_ssp2_2020, All_occurance), 
-  terra::extract(chl_ssp4_2020, All_occurance),
-  terra::extract(mld_ssp2_2020, All_occurance), 
-  terra::extract(mld_ssp4_2020, All_occurance)
+  terra::extract(c(temp_ssp2_2020, temp_ssp4_2020, 
+                   chl_ssp2_2020, chl_ssp4_2020,
+                   mld_ssp2_2020, mld_ssp4_2020), All_occurance)
    ) %>%
   cbind(OneBigDataSet) 
 
 testSet$ID = NULL
-testSet$ID.1 = NULL
-testSet$ID.2 = NULL
-testSet$ID.3 = NULL
-testSet$ID.4 = NULL
-testSet$ID.5 = NULL
+for (x in 1:5) {
+  testSet$ID.x = NULL
+}
 
 testSet = na.omit(testSet)
 
 colnames(testSet)
 
-names(testSet) <- c("temp_ssp2_20","temp_ssp4_20","chl_ssp2_20","chl_ssp4_20","mld_ssp2_20", "mld_ssp4_20", "occurance_status", "geometry")
+names(testSet) <- c("temp_ssp2_20","temp_ssp4_20","chl_ssp2_20","chl_ssp4_20","mld_ssp2_20", "mld_ssp4_20",
+                    "occurance_status", "geometry")
 ```
 
 ```{r}
