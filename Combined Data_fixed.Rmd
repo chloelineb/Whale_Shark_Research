@@ -1,7 +1,8 @@
 ---
 title: "Combined Data"
-output: html_document
+author: "Group 1 - Chunman, Connor, Chloeline"
 date: "2024-07-11"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
