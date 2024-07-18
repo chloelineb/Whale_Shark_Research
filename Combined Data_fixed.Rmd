@@ -33,46 +33,29 @@ latitude = c(31.14, 14.37)
 longitude = c(-80.63, -98.86)
 ```
 
-2020 
+Present day data
 ```{r}
-#establishing the time of 2020
-time1 = c('2020-01-01T00:00:00Z', '2020-01-01T00:00:00Z')
-constraints1 = list(time1, latitude, longitude)
-names(constraints1) = c("time", "latitude", "longitude")
-```
+constraints1 = list(latitude, longitude)
+names(constraints1) = c("latitude", "longitude")
 
-2020 - ssp2 (45)
-```{r}
+
 #identifying data set for surface temperature
-
-temp_ssp2_2020 <- download_layers(dataset_id = "thetao_ssp245_2020_2100_depthsurf", variables = "thetao_mean", constraints = constraints1)
-
+temp_current <- download_layers(dataset_id = "thetao_baseline_2000_2019_depthsurf", variables = "thetao_mean", constraints = constraints1)
 
 
 #downloading layer to the according varibale 
-mld_ssp2_2020 <- download_layers(dataset_id = "mlotst_ssp245_2020_2100_depthsurf", variables = "mlotst_mean", constraints = constraints1)
-
-
-
-# downloading layer 
-chl_ssp2_2020 <- download_layers(dataset_id = "chl_ssp245_2020_2100_depthsurf", variables = "chl_mean", constraints = constraints1)
-```
-
-2020 - ssp4 (60)
-```{r}
-#identifying data set for surface temperature ssp4
-
-temp_ssp4_2020 <- download_layers(dataset_id = "thetao_ssp460_2020_2100_depthsurf", variables = "thetao_mean", constraints = constraints1)
-
-
-
-#downloading layer to the according varibale 
-mld_ssp4_2020 <- download_layers(dataset_id = "mlotst_ssp460_2020_2100_depthsurf", variables = "mlotst_mean", constraints = constraints1)
+mld_current <- download_layers(dataset_id = "mlotst_baseline_2000_2019_depthsurf", variables = "mlotst_mean", constraints = constraints1)
 
 
 # downloading layer 
-chl_ssp4_2020 <- download_layers(dataset_id = "chl_ssp460_2020_2100_depthsurf", variables = "chl_mean", constraints = constraints1)
+chl_current <- download_layers(dataset_id = "chl_baseline_2000_2018_depthsurf", variables = "chl_mean", constraints = constraints1)
+
+#removing column for data points from 2000-2010 to leave only data for present 
+temp_current$thetao_mean_1 = NULL
+mld_current$mlotst_mean_1 = NULL
+chl_current$chl_mean_1 = NULL
 ```
+
 
 ------------
 2050 
@@ -113,7 +96,6 @@ mld_ssp4_2050 <- download_layers(dataset_id = "mlotst_ssp460_2020_2100_depthsurf
 chl_ssp4_2050 <- download_layers(dataset_id = "chl_ssp460_2020_2100_depthsurf", variables = "chl_mean", constraints = constraints2)
 ```
 
-
 ------------
 2090 
 ```{r}
@@ -125,7 +107,6 @@ names(constraints3) = c("time", "latitude", "longitude")
 
 2090 - ssp2 (45)
 ```{r}
-
 temp_ssp2_2090 <- download_layers(dataset_id = "thetao_ssp245_2020_2100_depthsurf", variables = "thetao_mean", constraints = constraints3)
 
 
@@ -152,35 +133,26 @@ mld_ssp4_2090 <- download_layers(dataset_id = "mlotst_ssp460_2020_2100_depthsurf
 chl_ssp4_2090 <- download_layers(dataset_id = "chl_ssp460_2020_2100_depthsurf", variables = "chl_mean", constraints = constraints3)
 ```
 
+
 Extracting the occurcances 
 ```{r}
 # reading out the occurences 
 occurences = read_csv(here::here("data", "Raw", "GBIF_Occurance_data2.csv"))%>% 
-  select(occurrenceStatus, decimalLatitude, decimalLongitude) %>% 
+  dplyr::select(occurrenceStatus, decimalLatitude, decimalLongitude) %>% 
   filter(!is.na(as.numeric(decimalLatitude))) %>% 
   filter(!is.na(as.numeric(decimalLongitude)))  %>% 
   filter(occurrenceStatus == "PRESENT") %>% 
   st_as_sf(coords = c("decimalLongitude", "decimalLatitude"), crs = "EPSG:4326")
 
 ```
+
 extracting the pseudo absences 
 ```{r}
 #extracting 
 buffer_occurence = st_buffer(occurences, 5000)
-combined_data = data.frame()
 
-n = 18
-#vector of all the rasters we are testing
-rasters = c(temp_ssp2_2020_extract, temp_ssp2_2050, temp_ssp2_2090, temp_ssp4_2020, temp_ssp4_2050, temp_ssp4_2090, mld_ssp2_2020, mld_ssp2_2050, mld_ssp2_2090, mld_ssp4_2020, mld_ssp4_2050, mld_ssp4_2090, chl_ssp2_2020, chl_ssp2_2050, chl_ssp2_2090, chl_ssp4_2020, chl_ssp4_2050, chl_ssp4_2090)
-#creates the necessary means for the rasters
-Crops = rep(NaN, n)
-extracts = rep(NaN, n)
-
-#need to figure out how to combine the rasters so this for loop works
-for (i in 1:18) {
-#problem with cropping a portion of a vector
-Crops[i] = terra::crop(rasters[i], buffer_occurence)
-no_points = terra::mask(rasters[i], buffer_occurence, inverse=TRUE)
+temp_crop_current = crop(temp_current, buffer_occurence)
+no_points = mask(temp_current, buffer_occurence, inverse=TRUE)
 
 # takes a while, but you'll want to change the number to get close to the number of occurences you have
 random_points = terra::spatSample(no_points, 10000, "random", na.rm=T, as.points=TRUE) %>% 
@@ -189,32 +161,30 @@ random_points = terra::spatSample(no_points, 10000, "random", na.rm=T, as.points
 class(random_points)
 
 random_points = random_points %>% 
-  filter(thetao_mean > 0)%>% 
-  mutate(occurrenceStatus = "ABSENT") %>% relocate(geometry, .after = occurrenceStatus)
-
-<<<<<<< HEAD
-extracts[i] = terra::extract(rasters[i], occurences) %>% 
-  cbind(occurences) %>% 
-  st_as_sf() %>% 
-  select(means[i], occurrenceStatus)
-
-combined_data %>% 
-  mutate(extracts[i])
-}
-=======
-
-random_points$thetao_mean <- NULL
+  filter(thetao_mean_2 > 0)%>% 
+  mutate(occurrenceStatus = "ABSENT")%>% 
+  dplyr::select(thetao_mean_2, occurrenceStatus)
 
 All_occurance <- rbind(occurences, random_points)
->>>>>>> 0b448ebc2c85bc919e1af0549836f6d5af1c14b4
 ```
+
+
+```{r}
+#temp <- terra::project(temp_current, crs(All_occurance))
+#temp_mean <- terra::extract(x = temp_2018, y = occurences)
+
+#temp_final <- temp_mean %>%
+#  dplyr::select("thetao_mean_2") %>%
+#  rename("mean_temp" = "thetao_mean_2")
+```
+
 
 ```{r}
 
 testSet = c(
-  terra::extract(c(temp_ssp2_2020, temp_ssp4_2020, 
-                   chl_ssp2_2020, chl_ssp4_2020,
-                   mld_ssp2_2020, mld_ssp4_2020,
+  terra::extract(c(temp_current, 
+                   chl_current,
+                   mld_current,
                    temp_ssp2_2050, temp_ssp4_2050, 
                    chl_ssp2_2050, chl_ssp4_2050,
                    mld_ssp2_2050, mld_ssp4_2050,
@@ -224,26 +194,20 @@ testSet = c(
   cbind(All_occurance) 
 
 testSet$ID = NULL
-for (x in 1:17) {
-  testSet$ID.x = NULL
-}
-
 testSet = na.omit(testSet)
 
-names(testSet) <- c("temp_ssp2_20","temp_ssp4_20","chl_ssp2_20","chl_ssp4_20","mld_ssp2_20","mld_ssp4_20",
-                         "temp_ssp2_50","temp_ssp4_50","chl_ssp2_50","chl_ssp4_50","mld_ssp2_50", "mld_ssp4_50",
-                         "temp_ssp2_90","temp_ssp4_90","chl_ssp2_90","chl_ssp4_90","mld_ssp2_90", "mld_ssp4_90",
+names(testSet) <- c("temp_current", 
+                    "chl_current",
+                    "mld_current",
+                    "temp_ssp2_50","temp_ssp4_50",
+                    "chl_ssp2_50","chl_ssp4_50",
+                    "mld_ssp2_50", "mld_ssp4_50",
+                    "temp_ssp2_90","temp_ssp4_90",
+                    "chl_ssp2_90","chl_ssp4_90",
+                    "mld_ssp2_90", "mld_ssp4_90",
                     "occurance_status", "geometry")
-
-
-ggplot(model_data) +
-  geom_sf(aes(color = occurrenceStatus)) +
-  theme_bw()
 ```
 
-
-<<<<<<< HEAD
-=======
 separating long and lad of point geometries 
 ```{r}
 testSet2 <- testSet %>% 
@@ -253,10 +217,10 @@ testSet2 <- testSet %>%
 
 testSet2$geometry <- NULL
 ```
->>>>>>> 0b448ebc2c85bc919e1af0549836f6d5af1c14b4
+
 
 generating into csv
 ```{r}
-write.csv(testSet2, "Data_of_everything.csv")
+write.csv(testSet2, "Data_of_everything_updated.csv")
 ```
 
