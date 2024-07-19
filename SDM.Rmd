@@ -11,3 +11,140 @@ knitr::opts_chunk$set(echo = TRUE,
                       warning = FALSE)
 ```
                         
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(here)
+library(blorr)
+library(glmnet)
+
+set.seed(42)
+```
+
+
+
+```{r}
+data_everything = read_csv(here::here("Data_of_everything_updated.csv")) %>% 
+  mutate(occurance_status = as.factor(occurance_status)) %>% 
+  group_by(occurance_status) %>% 
+  sample_n(size = 370)
+  
+```
+
+```{r}
+data_split = initial_split(data_everything, prop = 0.75, strata = occurance_status)
+
+train = training(data_split)
+test = testing(data_split)
+#head gives a quick look at the data set 
+#head(train)
+```
+
+```{r}
+cv_folds = vfold_cv(train, v = 5)
+```
+
+```{r}
+recipe_current = recipe(occurance_status ~ long + lat + temp_current + chl_current + mld_current, data = train) %>%
+  step_dummy(all_nominal_predictors())
+```
+
+```{r}
+#?glm
+```
+
+```{r}
+glm_model = logistic_reg() %>% 
+  set_engine("glm") %>%
+  set_mode("classification")
+```
+
+```{r}
+glm_workflow = workflow() %>%
+  add_model(glm_model) %>%
+  add_recipe(recipe_ssp2_20)
+
+glm_workflow
+```
+
+```{r}
+# tune_grid = tibble(penalty = 10^seq(-4, -1, length.out = 30))
+# 
+# tune_grid %>% top_n(-5)
+# 
+# 
+# glm_cv_tune = glm_workflow %>%
+#   tune_grid(grid = tune_grid,
+#             resamples = cv_folds,
+#             control = control_grid(save_pred = TRUE),
+#             metrics = metric_set(roc_auc)) #uses cross validation to tune the mtry and trees parameters
+# 
+# save(glm_cv_tune, file = here::here("glm_output", "glm_tune.rda"))
+
+# load(file = here::here("glm_tune.rda"))
+```
+
+
+```{r}
+# glm_cv_tune %>% 
+#   collect_metrics() %>% 
+#   ggplot(aes(x = penalty, y = mean))
+```
+
+```{r}
+cross_v = glm_workflow %>% 
+  fit_resamples(cv_folds)
+
+collect_metrics(cross_v)
+```
+
+```{r}
+train_fit_glm = fit(glm_workflow, train)
+```
+
+```{r}
+test_predict_glm = predict(train_fit_glm, test) %>%
+  bind_cols(test)%>%
+  mutate(occurance_status = as.factor(occurance_status))
+test_predict_glm
+
+test_predict2 = predict(train_fit_glm, test, type = "prob") %>%
+  bind_cols(test) %>%
+  mutate(occurance_status = as.factor(occurance_status))
+test_predict2
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+accuracy(test_predict_glm, truth = occurance_status, estimate = .pred_class)
+
+# make ROC curve
+```
+
+```{r}
+#replace test in both place with new larger datasets 
+
+# once for present data still 
+
+
+# once for each ssp scenario
+
+future_predict_glm = predict(train_fit_glm, test, type = "prop") %>%
+  bind_cols(test)%>%
+  mutate(occurance_status = as.factor(occurance_status))
+```
+
+```{r}
+# rasterizing them specifically .pred_PRESENT (Allie will get back to you on)
+# pretty sure it's just terra::rast()
+```
