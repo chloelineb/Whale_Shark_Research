@@ -1,0 +1,103 @@
+---
+title: "SDM-RandomForest-Attempt2"
+author: "Group 1"
+date: "2024-07-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+#install.packages("ranger")
+#install.packages("randomForest")
+
+library(tidyverse)
+library(tidymodels)
+library(here)
+library(nnet)
+library(ranger)
+library(glue)
+library(randomForest)
+
+set.seed(42)
+```
+
+Prep-ing the data for andom forest
+```{r}
+#reading in our data
+All_data = read_csv(here::here("Data_of_everything_updated.csv")) %>% 
+  mutate(occurance_status = as.factor(occurance_status)) %>% 
+  group_by(occurance_status) %>% 
+  sample_n(size = 370) %>% 
+  na.omit()%>%
+  distinct()
+
+#splitting it
+data_split = initial_split(All_data, prop = 0.75, strata = occurance_status)
+
+train = training(data_split)
+test = testing(data_split)
+
+recipe = recipe(train, formula = occurance_status ~ temp_current + chl_current + mld_current)
+```
+
+model *without tuning*
+```{r}
+rf_model = randomForest(train$occurance_status ~  train$temp_current +  train$chl_current + train$mld_current, data = train, ntree = 500)
+
+workflow = workflow() %>%
+  add_model(randomForest(train$occurance_status ~  train$temp_current +  train$chl_current + train$mld_current, data = train, ntree = 500)) %>%
+  add_recipe(recipe)
+
+train_fit = fit(workflow, train)
+
+test_predict3 = predict(rm_model, test, type = "prob") %>%
+  bind_cols(test) %>%
+  mutate(occurance_status = as.factor(occurance_status))
+```
+
+```{r}
+rf_workflow = workflow(spec = rf_)
+
+rf_workflow
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+rf <-randomForest(occurance_status~temp_current + chl_current + mld_current,data=train, ntree=500) 
+print(rf)
+```
+
+```{r}
+#manually tuning mtry value 
+
+tuneRF(train, train$occurance_status, stepFacotr = 1.5)
+#best mtry value is 4
+```
+update model
+```{r}
+rf2 <-randomForest(occurance_status~temp_current + chl_current + mld_current,data=train, ntree=500, mtry = 4) 
+print(rf2)
+```
+model fitting
+```{r}
+train_fit_knn = fit(rf2, train)
+
+train_fit_knn
+```
+
