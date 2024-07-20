@@ -29,7 +29,7 @@ set.seed(42)
 
 
 ```{r}
-data_everything = read_csv(here::here("Data_of_everything_updated.csv")) %>% 
+All_data = read_csv(here::here("Data_of_everything_updated.csv")) %>% 
   mutate(occurance_status = as.factor(occurance_status)) %>% 
   group_by(occurance_status) %>% 
   sample_n(size = 370)
@@ -37,7 +37,7 @@ data_everything = read_csv(here::here("Data_of_everything_updated.csv")) %>%
 ```
 
 ```{r}
-data_split = initial_split(data_everything, prop = 0.75, strata = occurance_status)
+data_split = initial_split(All_data, prop = 0.75, strata = occurance_status)
 
 train = training(data_split)
 test = testing(data_split)
@@ -67,7 +67,7 @@ glm_model = logistic_reg() %>%
 ```{r}
 glm_workflow = workflow() %>%
   add_model(glm_model) %>%
-  add_recipe(recipe_ssp2_20)
+  add_recipe(recipe_current)
 
 glm_workflow
 ```
@@ -117,18 +117,26 @@ test_predict2 = predict(train_fit_glm, test, type = "prob") %>%
   bind_cols(test) %>%
   mutate(occurance_status = as.factor(occurance_status))
 test_predict2
-```
-
-
+ 
 ```{r}
-
+test_predict_glm %>% 
+  conf_mat(truth = occurance_status, estimate = .pred_class) %>% 
+  autoplot(type = "heatmap") +
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  labs(title = "GLM")
 ```
+
 
 
 ```{r}
 accuracy(test_predict_glm, truth = occurance_status, estimate = .pred_class)
 
 # make ROC curve
+test_roc_auc = roc_curve(data = test_predict2, truth = occurance_status, .pred_ABSENT, ".pred_ABSENT")
+
+autoplot(test_roc_auc)+
+    theme_bw()
 ```
 
 ```{r}
