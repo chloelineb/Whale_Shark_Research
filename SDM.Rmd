@@ -10,18 +10,14 @@ knitr::opts_chunk$set(echo = TRUE,
                       message = FALSE,
                       warning = FALSE)
 ```
-                        
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
+ 
 ```{r}
 library(tidyverse)
 library(tidymodels)
 library(here)
 library(blorr)
 library(glmnet)
+library(pROC)
 
 set.seed(42)
 ```
@@ -117,6 +113,7 @@ test_predict2 = predict(train_fit_glm, test, type = "prob") %>%
   bind_cols(test) %>%
   mutate(occurance_status = as.factor(occurance_status))
 test_predict2
+```
  
 ```{r}
 test_predict_glm %>% 

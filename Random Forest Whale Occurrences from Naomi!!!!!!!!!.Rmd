@@ -1,0 +1,571 @@
+---
+title: "Random_Forest"
+author: "Naomi Zhao"
+date: "2024-07-17"
+output: html_document
+---
+```{r}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+#install.packages("ranger")
+#install.packages("randomForest")
+
+library(tidyverse)
+library(tidymodels)
+library(here)
+library(nnet)
+library(ranger)
+library(glue)
+library(randomForest)
+
+set.seed(42)
+
+```
+
+```{r message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+# for (whale in c("blue", "grey", "humpback", "fin")) {
+#   a <- read_csv(glue("~/Desktop/Final Project/Research-Project-SRA/data/final_data/{whale}_tidy_data.csv")) |>
+#     group_by(occurrence) |>
+#     summarize(n = n())
+#   
+#   b <- read_csv(glue("~/Desktop/Final Project/Research-Project-SRA/data/final_data/{whale}_tidy_data.csv")) |>
+#     group_by(occurrence) |>
+#     na.omit() |>
+#     summarize(n = n())
+#   
+#   print((a[1, 2] / (a[1, 2] + a[2, 2])) |> as.numeric())
+#   
+#   print((b[1, 2] / (b[1, 2] + b[2, 2])) |> as.numeric())
+# }
+```
+
+##Fin_whale_sightings
+```{r}
+fin_sighting = read_csv(here("~/Desktop/Final Project/Research-Project-SRA/data/final_data/fin_tidy_data.csv")) %>%
+  na.omit()%>%
+  mutate(occurrence = as.factor(occurrence)) %>%
+  distinct()
+
+data_split = initial_split(fin_sighting, prop = 0.75, strata = occurrence) 
+
+train = training(data_split)
+test = testing(data_split)
+
+train |> group_by(occurrence) |> summarize(n = n())
+```
+```{r}
+#Create flows for the cross-validation 
+cv_folds = vfold_cv(train, v=10)
+
+#Create a model recipe 
+whale_recipe = recipe(occurrence ~ lon + lat + chl + depth + pH + primary_productivity + salinity + temp + velo, data = train) %>% 
+  #normalize all the numeric predictors to ensure they are all in the same scale 
+  step_normalize(all_numeric_predictors())
+
+whale_recipe
+```
+```{r}
+?randomForest
+
+#Random Forest model 
+  fin_model <- randomForest(fin_sighting,
+    mode = "classification",
+    trees = tune(),
+    min_n = tune()
+  )
+
+fin_model
+```
+```{r}
+#create work flow
+fin_workflow = workflow() %>%
+  add_model (fin_model) %>%
+  add_recipe(whale_recipe)
+
+fin_workflow
+```
+
+```{r}
+#fin_cv_tune = fin_cv_tune <- fin_workflow %>%
+   #tune_grid(resamples = cv_folds,
+   #metrics = metric_set(roc_auc, accuracy) )
+
+#save(fin_cv_tune, file= here::here("fin_tune.rda"))
+
+#load (file=here::here("fin_tune.rda"))
+```
+
+```{r}
+collect_metrics(fin_cv_tune)
+```
+```{r}
+autoplot(fin_cv_tune) +
+  theme_bw()
+```
+```{r}
+fin_final = finalize_workflow(fin_workflow, select_best(fin_cv_tune, metric = "roc_auc" ))
+
+train_fit_fin = fit(fin_final, train)
+
+train_fit_fin
+```
+```{r}
+#Get the prediction prob for the test data, get the class prediction
+test_predict_fin = predict(train_fit_fin, test) %>%
+  bind_cols(test) %>%
+  mutate (occurrence=as.factor(occurrence))
+
+#Give the predicted prob of being in each class
+test_predict2_fin = predict(train_fit_fin, test, type = "prob") %>% #gets the testing prediction
+  bind_cols(test) %>%
+  mutate(occurrence = as.factor(occurrence)) %>% 
+  mutate(check = .pred_0 + .pred_1) %>% 
+  mutate(pred_binary = ifelse(.pred_1 >= 0.75, "1", "0"))
+```
+
+```{r}
+#Measure the accuracy
+accuracy (test_predict_fin, truth = occurrence, estimate=.pred_class)
+```
+```{r}
+test_roc_acu_fin = roc_curve(test_predict2_fin, occurrence, .pred_1)
+
+test_roc_acu_fin_0 = roc_curve(test_predict2_fin, occurrence, .pred_0)
+```
+
+```{r}
+test_predict_fin %>%
+  conf_mat(truth=occurrence, estimate = .pred_class) %>%
+  autoplot(type = "heatmap") +
+  theme_bw()+
+  theme(axis.text.x = element_text(angle=30, hjust = 1)) +
+  labs(title="Random Forest")
+
+ggplot(test_predict_fin, aes(lon, lat, color = occurrence)) +
+  geom_point()
+```
+
+
+```{r}
+autoplot(test_roc_acu_fin_0) +
+  theme_bw()
+```
+Variable importance plot
+```{r}
+fin_vip = randomForest::varImpPlot(fin_model, 
+                         sort=FALSE, 
+                         main="Variable Importance Plot")
+```
+
+
+
+
+
+##Humpback Whale Sightings
+```{r}
+humpback_sighting = read_csv(here("~/Desktop/Final Project/Research-Project-SRA/data/final_data/humpback_tidy_data.csv")) %>%
+  na.omit()%>%
+  mutate(occurrence = as.factor(occurrence)) %>%
+  distinct()
+
+data_split = initial_split(humpback_sighting, prop = 0.75, strata = occurrence) 
+
+train = training(data_split)
+test = testing(data_split)
+
+head(train)
+
+train |> group_by(occurrence) |> summarize(n = n())
+```
+
+```{r}
+#Create flows for the cross-validation 
+cv_folds = vfold_cv(train, v=10)
+
+#Create a model recipe 
+whale_recipe = recipe(occurrence ~ lon + lat + chl + depth + pH + primary_productivity + salinity + temp + velo, data = train) %>% 
+  #normalize all the numeric predictors to ensure they are all in the same scale 
+  step_normalize(all_numeric_predictors())
+
+whale_recipe
+```
+
+```{r}
+#Random Forest Model
+  humpback_model <- randomForest(humpback_sighting,
+    mode = "classification",
+    trees = tune(),
+    min_n = tune()
+  )
+
+humpback_model
+```
+
+```{r}
+#Create work flow
+humpback_workflow = workflow() %>%
+  add_model (humpback_model) %>%
+  add_recipe(whale_recipe)
+
+humpback_workflow
+```
+
+```{r}
+#humpback_cv_tune = humpback_cv_tune <- humpback_workflow %>%
+   #tune_grid(resamples = cv_folds,
+   #metrics = metric_set(roc_auc, accuracy) )
+
+save(humpback_cv_tune, file= here::here("humpback_tune.rda"))
+
+load(file=here::here("humpback_tune.rda"))
+```
+
+```{r}
+collect_metrics(humpback_cv_tune)
+```
+
+```{r}
+autoplot(humpback_cv_tune) +
+  theme_bw()
+```
+
+```{r}
+humpback_final = finalize_workflow(humpback_workflow, select_best(humpback_cv_tune, metric = "roc_auc" ))
+
+train_fit_humpback = fit(humpback_final, train)
+
+train_fit_humpback
+```
+
+```{r}
+test_predict_humpback = predict(train_fit_humpback, test) %>%
+  bind_cols(test) %>%
+  mutate (occurrence=as.factor(occurrence))
+```
+
+```{r}
+test_predict2_humpback = predict(train_fit_humpback, test, type = "prob") %>% #gets the testing prediction
+  bind_cols(test) %>%
+  mutate(occurrence = as.factor(occurrence)) %>% 
+  mutate(check = .pred_0 + .pred_1) %>% 
+  mutate(pred_binary = ifelse(.pred_1 >= 0.75, "1", "0"))
+```
+
+```{r}
+accuracy (test_predict_humpback, truth = occurrence, estimate=.pred_class)
+```
+
+```{r}
+test_roc_acu_humpback = roc_curve(test_predict2_humpback, occurrence, .pred_1)
+
+test_roc_acu_humpback_0 = roc_curve(test_predict2_humpback, occurrence, .pred_0)
+```
+
+```{r}
+test_predict_humpback %>%
+  conf_mat(truth=occurrence, estimate = .pred_class) %>%
+  autoplot(type = "heatmap") +
+  theme_bw()+
+  theme(axis.text.x = element_text(angle=30, hjust = 1)) +
+  labs(title="Random Forest")
+
+ggplot(test_predict_humpback, aes(lon, lat, color = occurrence)) +
+  geom_point()
+```
+
+```{r}
+test_predict_humpback %>%
+  conf_mat(truth=occurrence, estimate = .pred_class) %>%
+  autoplot(type = "heatmap") +
+  theme_bw()+
+  theme(axis.text.x = element_text(angle=30, hjust = 1)) +
+  labs(title="Random Forest")
+```
+
+```{r}
+autoplot(test_roc_acu_humpback_0) +
+  theme_bw()
+```
+
+```{r}
+humpback_vip = randomForest::varImpPlot(humpback_model, 
+                         sort=FALSE, 
+                         main="Variable Importance Plot")
+```
+
+
+
+------------------------------------------------------------------------------------------------------------------
+
+
+
+
+##Grey_whale_sighting
+```{r}
+grey_sighting = read_csv(here("~/Desktop/Final Project/Research-Project-SRA/data/final_data/grey_tidy_data.csv")) %>%
+  na.omit()%>%
+  mutate(occurrence = as.factor(occurrence)) %>%
+  distinct()
+
+data_split = initial_split(grey_sighting, prop = 0.75, strata = occurrence) 
+
+train = training(data_split)
+test = testing(data_split)
+
+head(train)
+
+train |> group_by(occurrence) |> summarize(n = n())
+```
+
+```{r}
+#Create flows for the cross-validation 
+cv_folds = vfold_cv(train, v=10)
+
+#Create a model recipe 
+whale_recipe = recipe(occurrence ~ lon + lat + chl + depth + pH + primary_productivity + salinity + temp + velo, data = train) %>% 
+  #normalize all the numeric predictors to ensure they are all in the same scale 
+  step_normalize(all_numeric_predictors())
+
+whale_recipe
+```
+
+```{r}
+#Random Forest Model
+  grey_model <- randomForest(grey_sighting,
+    mode = "classification",
+    trees = tune(),
+    min_n = tune()
+  )
+
+grey_model
+```
+
+```{r}
+#Create work flow
+grey_workflow = workflow() %>%
+  add_model (grey_model) %>%
+  add_recipe(whale_recipe)
+
+grey_workflow
+```
+
+```{r}
+#grey_cv_tune = grey_cv_tune <- grey_workflow %>%
+   #tune_grid(resamples = cv_folds,
+   #metrics = metric_set(roc_auc, accuracy) )
+
+save(grey_cv_tune, file= here::here("grey_tune.rda"))
+
+load(file=here::here("grey_tune.rda"))
+```
+
+```{r}
+collect_metrics(grey_cv_tune)
+```
+
+```{r}
+autoplot(grey_cv_tune) +
+  theme_bw()
+```
+
+```{r}
+grey_final = finalize_workflow(grey_workflow, select_best(grey_cv_tune, metric = "roc_auc" ))
+
+train_fit_grey = fit(grey_final, train)
+
+train_fit_grey
+```
+
+```{r}
+test_predict_grey = predict(train_fit_grey, test) %>%
+  bind_cols(test) %>%
+  mutate (occurrence=as.factor(occurrence))
+```
+
+```{r}
+test_predict2_grey = predict(train_fit_grey, test, type = "prob") %>% #gets the testing prediction
+  bind_cols(test) %>%
+  mutate(occurrence = as.factor(occurrence)) %>% 
+  mutate(check = .pred_0 + .pred_1) %>% 
+  mutate(pred_binary = ifelse(.pred_1 >= 0.75, "1", "0"))
+```
+
+```{r}
+accuracy (test_predict_grey, truth = occurrence, estimate=.pred_class)
+```
+
+```{r}
+test_roc_acu_grey = roc_curve(test_predict2_grey, occurrence, .pred_1)
+
+test_roc_acu_grey_0 = roc_curve(test_predict2_grey, occurrence, .pred_0)
+```
+
+```{r}
+test_predict_grey %>%
+  conf_mat(truth=occurrence, estimate = .pred_class) %>%
+  autoplot(type = "heatmap") +
+  theme_bw()+
+  theme(axis.text.x = element_text(angle=30, hjust = 1)) +
+  labs(title="Random Forest")
+
+ggplot(test_predict_grey, aes(lon, lat, color = occurrence)) +
+  geom_point()
+```
+
+```{r}
+test_predict_grey %>%
+  conf_mat(truth=occurrence, estimate = .pred_class) %>%
+  autoplot(type = "heatmap") +
+  theme_bw()+
+  theme(axis.text.x = element_text(angle=30, hjust = 1)) +
+  labs(title="Random Forest")
+```
+
+```{r}
+autoplot(test_roc_acu_grey_0) +
+  theme_bw()
+```
+
+```{r}
+grey_vip = randomForest::varImpPlot(grey_model, 
+                         sort=FALSE, 
+                         main="Variable Importance Plot")
+```
+
+
+-----------------------------------------------------------------------------------------------------------------
+
+
+
+##Blue Whale Sighting
+```{r}
+blue_sighting = read_csv(here("~/Desktop/Final Project/Research-Project-SRA/data/final_data/blue_tidy_data.csv")) %>%
+  na.omit()%>%
+  mutate(occurrence = as.factor(occurrence)) %>%
+  distinct()
+
+data_split = initial_split(blue_sighting, prop = 0.75, strata = occurrence) 
+
+train = training(data_split)
+test = testing(data_split)
+
+head(train)
+
+train |> group_by(occurrence) |> summarize(n = n())
+```
+
+```{r}
+#Create flows for the cross-validation 
+cv_folds = vfold_cv(train, v=10)
+
+#Create a model recipe 
+whale_recipe = recipe(occurrence ~ lon + lat + chl + depth + pH + primary_productivity + salinity + temp + velo, data = train) %>% 
+  #normalize all the numeric predictors to ensure they are all in the same scale 
+  step_normalize(all_numeric_predictors())
+
+whale_recipe
+```
+
+```{r}
+#Random Forest Model
+  blue_model <- randomForest(blue_sighting,
+    mode = "classification",
+    trees = tune(),
+    min_n = tune()
+  )
+blue_model
+```
+
+```{r}
+#Create work flow
+blue_workflow = workflow() %>%
+  add_model (blue_model) %>%
+  add_recipe(whale_recipe)
+
+blue_workflow
+```
+
+```{r}
+#blue_cv_tune = blue_cv_tune <- blue_workflow %>%
+   #tune_grid(resamples = cv_folds,
+   #metrics = metric_set(roc_auc, accuracy) )
+
+save(blue_cv_tune, file= here::here("blue_tune.rda"))
+
+load(file=here::here("blue_tune.rda"))
+```
+
+```{r}
+collect_metrics(blue_cv_tune)
+```
+```{r}
+autoplot(blue_cv_tune) +
+  theme_bw()
+```
+
+```{r}
+blue_final = finalize_workflow(blue_workflow, select_best(blue_cv_tune, metric = "roc_auc" ))
+
+train_fit_blue = fit(blue_final, train)
+
+train_fit_blue
+```
+
+```{r}
+test_predict_blue = predict(train_fit_blue, test) %>%
+  bind_cols(test) %>%
+  mutate (occurrence=as.factor(occurrence))
+```
+
+```{r}
+test_predict2_blue = predict(train_fit_blue, test, type = "prob") %>% #gets the testing prediction
+  bind_cols(test) %>%
+  mutate(occurrence = as.factor(occurrence)) %>% 
+  mutate(check = .pred_0 + .pred_1) %>% 
+  mutate(pred_binary = ifelse(.pred_1 >= 0.75, "1", "0"))
+```
+
+```{r}
+accuracy (test_predict_blue, truth = occurrence, estimate=.pred_class)
+```
+
+```{r}
+test_roc_acu_blue = roc_curve(test_predict2_blue, occurrence, .pred_1)
+
+test_roc_acu_blue_0 = roc_curve(test_predict2_blue, occurrence, .pred_0)
+```
+
+```{r}
+test_predict_blue %>%
+  conf_mat(truth=occurrence, estimate = .pred_class) %>%
+  autoplot(type = "heatmap") +
+  theme_bw()+
+  theme(axis.text.x = element_text(angle=30, hjust = 1)) +
+  labs(title="Random Forest")
+
+ggplot(test_predict_blue, aes(lon, lat, color = occurrence)) +
+  geom_point()
+```
+
+```{r}
+test_predict_blue %>%
+  conf_mat(truth=occurrence, estimate = .pred_class) %>%
+  autoplot(type = "heatmap") +
+  theme_bw()+
+  theme(axis.text.x = element_text(angle=30, hjust = 1)) +
+  labs(title="Random Forest")
+```
+
+
+```{r}
+autoplot(test_roc_acu_blue_0) 
+```
+
+```{r}
+blue_vip = randomForest::varImpPlot(blue_model, 
+                         sort=FALSE, 
+                         main="Variable Importance Plot")
+```
+

@@ -1,0 +1,81 @@
+---
+title: "SDM_2"
+author: "Mandy"
+date: "2024-07-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+```
+ 
+ 
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(here)
+library(blorr)
+library(pROC)
+library(ggRandomForests)
+
+set.seed(42)
+```
+
+```{r}
+All_data = read_csv(here::here("Data_of_everything_updated.csv")) %>% 
+  mutate(occurance_status = as.factor(occurance_status)) %>% 
+  group_by(occurance_status) %>% 
+  sample_n(size = 370)
+  
+```
+
+
+```{r}
+data_split = initial_split(All_data, prop = 0.75, strata = occurance_status)
+
+train = training(data_split)
+test = testing(data_split)
+
+
+data.rf <- randomForest(occurance_status ~ temp_current + chl_current + mld_current, data = train, importance=TRUE,
+proximity=TRUE)
+
+print(data.rf)
+
+predictions <- predict(data.rf, test, type = "prob")[,2]
+```
+
+```{r}
+All_data$occurance_status <- as.factor(All_data$occurance_status)
+
+roc_objec <- roc(test$occurance_status, predictions)
+plot(roc_objec, main="text")
+
+auc_value_rf<-auc(roc_objec)
+print(paste("AUC for RF", auc_value))
+
+auc_value_lr<-auc(test_roc_auc)
+print(paste("AUC for LG", auc_value_lr))
+```
+
+```{r}
+All_data$occurance_status <- as.factor(All_data$occurance_status)
+rf2 <- rfsrc(occurance_status ~ temp_current + chl_current + mld_current, data = All_data)
+gg_dta<- gg_rfsrc(rf2)
+plot(gg_dta)
+```
+
+```{r}
+test_roc_auc = roc_curve(data = test_predict2, truth = occurance_status, .pred_ABSENT, ".pred_ABSENT")
+
+autoplot(test_roc_auc)+
+    theme_bw()
+```
+
+```{r}
+accuracy(test_predict_glm, truth = occurance_status, estimate = .pred_class)
+accuracy(data.rf, truth = occurance_status, estimate = .pred_class)
+```
+
