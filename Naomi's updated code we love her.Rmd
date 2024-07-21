@@ -21,6 +21,7 @@ library(glue)
 library(randomForest)
 library(vip)
 library(parsnip)
+library(stars)
 
 set.seed(42)
 
@@ -152,6 +153,12 @@ autoplot(test_roc_acu_absent) +
 
 
 ```{r}
+random_points_sf <- st_as_sf(test_predict2_whaleshark, coords = c("long", "lat"))
 
+random_rast <- random_points_sf %>%
+  select(.pred_PRESENT) %>%
+  st_rasterize() %>%
+  aggregate(FUN = mean, by = random_points_sf) %>%
+  as.data.frame(xy = TRUE) %>%
+  st_as_sf()
 ```
-
