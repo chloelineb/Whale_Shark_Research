@@ -25,7 +25,6 @@ library(stars)
 library(raster)
 library(terra)
 library(patchwork)
-library(dplyr)
 
 set.seed(42)
 
@@ -206,7 +205,7 @@ predict_ssp4_2090 = predict(train_fit_ws, ssp4_2090, type = "prob") %>% #gets th
 random_points_sf <- st_as_sf(test_predict2_whaleshark, coords = c("long", "lat"))
 
 random_rast <- random_points_sf %>%
-  dplyr::select(.pred_PRESENT) %>%
+  select(.pred_PRESENT) %>%
   st_rasterize() %>%
   aggregate(FUN = mean, by = random_points_sf) %>%
   as.data.frame(xy = TRUE) %>%
@@ -215,8 +214,23 @@ random_rast <- random_points_sf %>%
 
 SDM woooo
 ```{r}
-terra::plot(test_predict2_whaleshark)+
-  theme_bw()
+predict_ssp2_2050 = st_as_sf(predict_ssp2_2050)
+
+plot(predict_ssp2_2050[, 2])
+
+ggplot()+
+  geom_raster(data = predict_ssp2_2050)
 ```
 
+<<<<<<< HEAD:Naomi's updated code we love her.Rmd
+sbm plot i hope
+```{r}
+ggplot() +
+  geom_sf(data = test_predict2_whaleshark, aes(oc)) +
+  theme_bw() +
+  scale_color_viridis_c() +
+  labs(x = "Longitude", y = "Latitude", fill = "pH")
+```
+=======
+>>>>>>> 8d1ca39ffa1362b0b4a302acbeecc8b05609c131:SDM_actual.Rmd
 
