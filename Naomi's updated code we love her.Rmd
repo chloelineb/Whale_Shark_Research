@@ -165,10 +165,10 @@ random_rast <- random_points_sf %>%
 
 shape files 
 ```{r}
+shapefile <- st_read("shape_file")
 
-
- names(DATANAME) = c( "x", "y", "Temp", "Temp_245_2090", "Temp_460_2090", "Chlor", "Chlor_245_2090", "Chlor_460_2090",
+names(shapefile) = c( "Temp", "Temp_245_2090", "Temp_460_2090", "Chlor", "Chlor_245_2090", "Chlor_460_2090",
   "Mlost", "Mlost_245_2090", "Mlost_460_2090", "Temp_245_2050", "Temp_460_2050", "Chlor_245_2050", "Chlor_460_2050",
-  "Mlost_245_2050", "Mlost_460_2050")
+  "Mlost_245_2050", "Mlost_460_2050", "geometry")
 ```
 
