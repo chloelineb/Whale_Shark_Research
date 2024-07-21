@@ -141,7 +141,7 @@ test_predict_whaleshark %>%
   theme(axis.text.x = element_text(angle=30, hjust = 1)) +
   labs(title="Random Forest")
 
-ggplot(test_predict_fin, aes(lon, lat, color = occurrence)) +
+ggplot(test_predict_whaleshark, aes(long, lat, color = occurance_status)) +
   geom_point()
 ```
 
