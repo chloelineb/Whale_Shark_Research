@@ -22,6 +22,10 @@ library(randomForest)
 library(vip)
 library(parsnip)
 library(stars)
+library(raster)
+library(terra)
+library(patchwork)
+library(dyplr)
 
 set.seed(42)
 
@@ -151,6 +155,52 @@ autoplot(test_roc_acu_absent) +
   theme_bw()
 ```
 
+```{r}
+shapefile <- st_read("shape_file")
+
+names(shapefile) = c( "Temp", "Temp_245_2090", "Temp_460_2090", "Chlor", "Chlor_245_2090", "Chlor_460_2090",
+  "Mlost", "Mlost_245_2090", "Mlost_460_2090", "Temp_245_2050", "Temp_460_2050", "Chlor_245_2050", "Chlor_460_2050",
+  "Mlost_245_2050", "Mlost_460_2050", "geometry")
+```
+
+splitting up the data to make our lives easier
+```{r}
+ssp2_2050 <- dplyr::select(shapefile, c("Temp_245_2050", "Chlor_245_2050", "Mlost_245_2050", "geometry" )) 
+names(ssp2_2050) = c("temp_current", "chl_current", "mld_current", "geometry")
+
+ssp4_2050 <- dplyr::select(shapefile, c("Temp_460_2050", "Chlor_460_2050", "Mlost_460_2050", "geometry" )) 
+names(ssp4_2050) = c("temp_current", "chl_current", "mld_current", "geometry")
+
+ssp2_2090 <- dplyr::select(shapefile, c("Temp_245_2090", "Chlor_245_2090", "Mlost_245_2050", "geometry" )) 
+names(ssp2_2090) = c("temp_current", "chl_current", "mld_current", "geometry")
+
+ssp4_2090 <- dplyr::select(shapefile, c("Temp_460_2090", "Chlor_460_2090", "Mlost_460_2090", "geometry" )) 
+names(ssp4_2090) = c("temp_current", "chl_current", "mld_current", "geometry")
+```
+
+predicting probability for other stuff 
+```{r}
+predict_ssp2_2050 = predict(train_fit_ws, ssp2_2050, type = "prob") %>% #gets the testing prediction
+  bind_cols(ssp2_2050) %>%
+  mutate(check = .pred_ABSENT + .pred_PRESENT) %>% 
+  mutate(pred_binary = ifelse(.pred_PRESENT >= 0.75, "1", "0"))
+
+predict_ssp4_2050 = predict(train_fit_ws, ssp4_2050, type = "prob") %>% #gets the testing prediction
+  bind_cols(ssp4_2050) %>%
+  mutate(check = .pred_ABSENT + .pred_PRESENT) %>% 
+  mutate(pred_binary = ifelse(.pred_PRESENT >= 0.75, "1", "0"))
+
+predict_ssp2_2090 = predict(train_fit_ws, ssp2_2090, type = "prob") %>% #gets the testing prediction
+  bind_cols(ssp2_2090) %>%
+  mutate(check = .pred_ABSENT + .pred_PRESENT) %>% 
+  mutate(pred_binary = ifelse(.pred_PRESENT >= 0.75, "1", "0"))
+
+predict_ssp4_2090 = predict(train_fit_ws, ssp4_2090, type = "prob") %>% #gets the testing prediction
+  bind_cols(ssp4_2090) %>%
+  mutate(check = .pred_ABSENT + .pred_PRESENT) %>% 
+  mutate(pred_binary = ifelse(.pred_PRESENT >= 0.75, "1", "0"))
+```
+
 
 ```{r}
 random_points_sf <- st_as_sf(test_predict2_whaleshark, coords = c("long", "lat"))
@@ -163,11 +213,11 @@ random_rast <- random_points_sf %>%
   st_as_sf()
 ```
 
-shape files 
-```{r}
-shapefile <- st_read("shape_file")
 
-names(shapefile) = c( "Temp", "Temp_245_2090", "Temp_460_2090", "Chlor", "Chlor_245_2090", "Chlor_460_2090",
-  "Mlost", "Mlost_245_2090", "Mlost_460_2090", "Temp_245_2050", "Temp_460_2050", "Chlor_245_2050", "Chlor_460_2050",
-  "Mlost_245_2050", "Mlost_460_2050", "geometry")
+SDM woooo
+```{r}
+terra::plot(test_predict2_whaleshark)+
+  theme_bw()
 ```
+
+
