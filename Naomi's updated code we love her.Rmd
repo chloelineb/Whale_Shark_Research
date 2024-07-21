@@ -149,12 +149,9 @@ ggplot(test_predict_fin, aes(lon, lat, color = occurrence)) +
 autoplot(test_roc_acu_absent) +
   theme_bw()
 ```
-Variable importance plot
+
 
 ```{r}
-?vip
-whaleshark_vip = randomForest::varImpPlot(ws_model, 
-                         sort=FALSE, 
-                         main="Variable Importance Plot")
+
 ```
 
