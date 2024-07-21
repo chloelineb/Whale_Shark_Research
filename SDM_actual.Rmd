@@ -25,7 +25,7 @@ library(stars)
 library(raster)
 library(terra)
 library(patchwork)
-library(dyplr)
+library(dplyr)
 
 set.seed(42)
 
@@ -206,13 +206,12 @@ predict_ssp4_2090 = predict(train_fit_ws, ssp4_2090, type = "prob") %>% #gets th
 random_points_sf <- st_as_sf(test_predict2_whaleshark, coords = c("long", "lat"))
 
 random_rast <- random_points_sf %>%
-  select(.pred_PRESENT) %>%
+  dplyr::select(.pred_PRESENT) %>%
   st_rasterize() %>%
   aggregate(FUN = mean, by = random_points_sf) %>%
   as.data.frame(xy = TRUE) %>%
   st_as_sf()
 ```
-
 
 SDM woooo
 ```{r}
